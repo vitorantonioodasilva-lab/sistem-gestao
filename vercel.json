@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/ml/sync?dias=7",
+      "schedule": "0 6 * * *"
+    }
+  ]
+}
