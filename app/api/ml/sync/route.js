@@ -31,7 +31,11 @@ async function executar(dias, cfg) {
   let ads = { ativo: false, motivo: "desligado nos ajustes" };
   if (cfg.ads_ativo !== "false") {
     try {
-      ads = await sincronizarAds(token, Number(cfg.ads_dias_sync) || 30);
+      ads = await sincronizarAds(
+        token,
+        sellerId,
+        Number(cfg.ads_dias_sync) || 30,
+      );
     } catch (e) {
       ads = { ativo: false, motivo: e.message };
     }
