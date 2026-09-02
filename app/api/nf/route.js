@@ -23,7 +23,7 @@ export async function POST(req) {
     // Carrinho gera nota única: agrupa os pedidos pelo pack.
     const r = await query(
       `SELECT shipment_id, order_id, pack_id FROM envios
-        WHERE shipment_id = ANY($1::text[])`,
+        WHERE shipment_id = ANY($1::bigint[])`,
       [ids],
     );
 
