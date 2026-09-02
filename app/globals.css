@@ -809,3 +809,25 @@ input.mini { width: 88px; text-align: right; }
   .r-item { grid-template-columns: auto 1fr; }
   .r-direita { grid-column: 2; text-align: left; }
 }
+
+.r-busca {
+  flex: 1 1 200px; min-width: 160px;
+  border: 2px solid var(--r-borda); border-radius: 12px;
+  padding: 9px 13px; font: inherit; font-size: 13px;
+  background: #fff; color: var(--r-tinta);
+}
+.r-busca:focus { outline: none; border-color: var(--r-rosa); }
+.r-busca::placeholder { color: #c9adb9; }
+
+.r-select {
+  border: 2px solid var(--r-borda); border-radius: 12px;
+  padding: 9px 11px; font: inherit; font-size: 13px;
+  background: #fff; color: var(--r-tinta); cursor: pointer;
+}
+.r-select:focus { outline: none; border-color: var(--r-rosa); }
+
+.r-link {
+  display: inline-block; margin-top: 6px; font-size: 12px;
+  color: var(--r-rosa-forte); text-decoration: none; font-weight: 600;
+}
+.r-link:hover { text-decoration: underline; }

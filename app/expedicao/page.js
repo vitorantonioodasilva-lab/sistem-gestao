@@ -43,6 +43,19 @@ const ABAS = [
     Icone: IconeCaminhao,
     ajuda: "Tudo certo, a transportadora já levou.",
   },
+  {
+    chave: "futuras",
+    rotulo: "Ainda vem por aí",
+    Icone: IconeRelogio,
+    ajuda:
+      "Vendas que o Mercado Livre ainda não liberou. É só para você se preparar.",
+  },
+];
+
+const ORDENACOES = [
+  ["prazo", "prazo mais apertado"],
+  ["recente", "venda mais recente"],
+  ["valor", "maior valor"],
 ];
 
 export default function Expedicao() {
@@ -53,6 +66,8 @@ export default function Expedicao() {
   const [sel, setSel] = useState(new Set());
   const [aba, setAba] = useState("nf");
   const [recado, setRecado] = useState(null);
+  const [busca, setBusca] = useState("");
+  const [ordem, setOrdem] = useState("prazo");
 
   async function carregar(silencioso) {
     if (!silencioso) setCarregando(true);
@@ -142,6 +157,32 @@ export default function Expedicao() {
     setTimeout(() => carregar(true), 2500);
   }
 
+  function separacao() {
+    if (!sel.size) return;
+    window.open(`/api/expedicao/separacao?ids=${[...sel].join(",")}`, "_blank");
+  }
+
+  const desfazer = (campo) =>
+    acao("desfazer", async () => {
+      await fetch("/api/expedicao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          acao: "marcar",
+          campo,
+          desfazer: true,
+          shipment_ids: [...sel],
+        }),
+      });
+      setRecado(
+        campo === "impresso"
+          ? "Marcação de impressão desfeita. Voltaram para a fila."
+          : "Envio desfeito. Voltaram para a fila de despacho.",
+      );
+      setSel(new Set());
+      await carregar(true);
+    });
+
   const marcarEnviado = () =>
     acao("despacho", async () => {
       await fetch("/api/expedicao", {
@@ -159,7 +200,43 @@ export default function Expedicao() {
     });
 
   const todos = dados?.envios || [];
-  const lista = todos.filter((e) => e.aba === aba);
+  const termo = busca.trim().toLowerCase();
+
+  const lista = todos
+    .filter((e) => e.aba === aba)
+    .filter((e) => {
+      if (!termo) return true;
+      const alvo = [
+        e.order_id,
+        e.shipment_id,
+        e.destinatario,
+        e.comprador,
+        e.cidade,
+        e.nf_numero,
+        ...e.itens.flatMap((i) => [i.titulo, i.sku]),
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return alvo.includes(termo);
+    })
+    .sort((a, b) => {
+      if (ordem === "valor") return b.total - a.total;
+      if (ordem === "recente")
+        return new Date(b.pedido_em) - new Date(a.pedido_em);
+      // prazo: quem não tem prazo vai para o fim
+      const pa = a.prazo_despacho
+        ? new Date(a.prazo_despacho).getTime()
+        : Infinity;
+      const pb = b.prazo_despacho
+        ? new Date(b.prazo_despacho).getTime()
+        : Infinity;
+      return pa - pb;
+    });
+
+  const unidadesSelecionadas = todos
+    .filter((e) => sel.has(e.shipment_id))
+    .reduce((t, e) => t + (e.unidades_total || 0), 0);
   const contas = dados?.resumo || {};
   const totalTarefas =
     (contas.nf || 0) + (contas.imprimir || 0) + (contas.impresso || 0);
@@ -177,6 +254,13 @@ export default function Expedicao() {
     );
 
   const abaAtual = ABAS.find((a) => a.chave === aba);
+
+  // Unidades que ainda precisam sair da prateleira hoje.
+  const unidadesHoje = todos
+    .filter(
+      (e) => e.aba === "nf" || e.aba === "imprimir" || e.aba === "impresso",
+    )
+    .reduce((t, e) => t + (e.unidades_total || 0), 0);
 
   return (
     <div className="rosa">
@@ -274,6 +358,12 @@ export default function Expedicao() {
                 {contas.impresso === 1 ? "" : "s"}.
               </li>
             )}
+            {unidadesHoje > 0 && (
+              <li>
+                No total são <strong>{unidadesHoje}</strong> unidade
+                {unidadesHoje === 1 ? "" : "s"} para separar na prateleira.
+              </li>
+            )}
           </ol>
         )}
       </section>
@@ -343,7 +433,16 @@ export default function Expedicao() {
               disabled={!sel.size}
             >
               <IconeEtiqueta width={16} height={16} />
-              Imprimir {sel.size || ""} etiqueta{sel.size === 1 ? "" : "s"}
+              {aba === "impresso" ? "Reimprimir" : "Imprimir"} {sel.size || ""}{" "}
+              etiqueta{sel.size === 1 ? "" : "s"}
+            </button>
+            <button
+              className="r-btn"
+              onClick={separacao}
+              disabled={!sel.size}
+              title="Papel para levar ao estoque, agrupado por produto"
+            >
+              <IconeCaixa width={16} height={16} /> Lista de separação
             </button>
             <button
               className="r-btn"
@@ -359,12 +458,56 @@ export default function Expedicao() {
             >
               <IconeCheck width={16} height={16} /> Marcar como enviado
             </button>
+            {aba === "impresso" && (
+              <button
+                className="r-btn"
+                onClick={() => desfazer("impresso")}
+                disabled={!sel.size || ocupado}
+                title="Volta para a fila de impressão"
+              >
+                Desfazer impressão
+              </button>
+            )}
           </>
         )}
 
+        {aba === "transporte" && (
+          <button
+            className="r-btn"
+            onClick={() => desfazer("despachado")}
+            disabled={!sel.size || ocupado}
+            title="Marcou sem querer? Volta para a fila de despacho"
+          >
+            Desfazer envio
+          </button>
+        )}
+
+        <input
+          className="r-busca"
+          type="search"
+          placeholder="Buscar produto, SKU, comprador ou pedido…"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+
+        <select
+          className="r-select"
+          value={ordem}
+          onChange={(e) => setOrdem(e.target.value)}
+          title="Ordenar a lista"
+        >
+          {ORDENACOES.map(([v, r]) => (
+            <option key={v} value={v}>
+              {r}
+            </option>
+          ))}
+        </select>
+
         <span className="r-contador">
           {sel.size
-            ? `${sel.size} selecionado${sel.size === 1 ? "" : "s"}`
+            ? `${sel.size} pacote${sel.size === 1 ? "" : "s"} · ${unidadesSelecionadas} unidade${
+                unidadesSelecionadas === 1 ? "" : "s"
+              }`
             : abaAtual?.ajuda}
         </span>
       </div>
@@ -475,6 +618,7 @@ export default function Expedicao() {
                   {e.impresso_em && (
                     <span className="r-chip ok">
                       impressa {dataCurta(e.impresso_em)}
+                      {e.vezes_impresso > 1 && ` · ${e.vezes_impresso}×`}
                     </span>
                   )}
                   {e.despachado_em && (
@@ -500,6 +644,14 @@ export default function Expedicao() {
               <div className="r-direita">
                 <div className="r-valor">{brl(e.total)}</div>
                 <div className="r-meta">{e.rotulo}</div>
+                <a
+                  className="r-link"
+                  href={e.link_ml}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  abrir no ML ↗
+                </a>
               </div>
             </article>
           ))}

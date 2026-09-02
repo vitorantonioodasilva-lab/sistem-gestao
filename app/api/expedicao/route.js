@@ -18,7 +18,8 @@ export async function GET(req) {
     const resumo = {
       nf: 0,
       imprimir: 0,
-      preparando: 0,
+      impresso: 0,
+      futuras: 0,
       transporte: 0,
       entregue: 0,
     };
@@ -39,7 +40,11 @@ export async function POST(req) {
     const corpo = await req.json().catch(() => ({}));
 
     if (corpo.acao === "marcar") {
-      await marcar(corpo.shipment_ids || [], corpo.campo);
+      await marcar(
+        corpo.shipment_ids || [],
+        corpo.campo,
+        Boolean(corpo.desfazer),
+      );
       return NextResponse.json({ ok: true });
     }
 

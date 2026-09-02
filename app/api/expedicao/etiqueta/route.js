@@ -4,7 +4,7 @@ import {
   montarEtiquetas,
   etiquetasZpl,
   recorteConfigurado,
-  marcar,
+  registrarImpressao,
 } from "@/lib/expedicao";
 
 export const runtime = "nodejs";
@@ -39,7 +39,7 @@ export async function GET(req) {
 
     if (formato === "zpl") {
       const zip = await etiquetasZpl(token, ids);
-      await marcar(ids, "impresso");
+      await registrarImpressao(ids);
       return new NextResponse(Buffer.from(zip), {
         headers: {
           "Content-Type": "application/zip",
@@ -55,11 +55,10 @@ export async function GET(req) {
       recorte: cfg.recorte,
     });
 
-    await marcar(
+    await registrarImpressao(
       ids.filter(
         (id) => !falhas.some((f) => String(f.shipment_id) === String(id)),
       ),
-      "impresso",
     );
 
     return new NextResponse(Buffer.from(pdf), {
