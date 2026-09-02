@@ -202,6 +202,68 @@ function Config() {
       </section>
 
       <section className="secao">
+        <div className="secao-titulo">Etiquetas e expedição</div>
+        <div className="form-linha">
+          <div className="campo" style={{ minWidth: 240 }}>
+            <label>Recorte para impressora térmica</label>
+            <select
+              defaultValue={cfg.etiqueta_recortar}
+              onChange={(e) =>
+                salvar({ config: { etiqueta_recortar: e.target.value } })
+              }
+            >
+              <option value="true">sim, recortar em 10x15</option>
+              <option value="false">não, folha A4 inteira</option>
+            </select>
+          </div>
+          <div className="campo">
+            <label>Dias de envios na tela</label>
+            <input
+              type="number"
+              defaultValue={cfg.expedicao_dias}
+              onBlur={(e) =>
+                salvar({ config: { expedicao_dias: e.target.value } })
+              }
+              className="mini"
+            />
+          </div>
+        </div>
+        <div className="form-linha">
+          {[
+            ["etiqueta_x0", "Recorte esquerda", 28],
+            ["etiqueta_y0", "Recorte base", 142],
+            ["etiqueta_x1", "Recorte direita", 289],
+            ["etiqueta_y1", "Recorte topo", 570],
+          ].map(([chave, rotulo, padrao]) => (
+            <div className="campo" key={chave}>
+              <label>{rotulo} (pt)</label>
+              <input
+                type="number"
+                defaultValue={cfg[chave] ?? padrao}
+                onBlur={(e) => salvar({ config: { [chave]: e.target.value } })}
+                className="mini"
+              />
+            </div>
+          ))}
+        </div>
+        <p
+          style={{
+            fontSize: 13,
+            color: "var(--tinta-fraca)",
+            maxWidth: 680,
+            lineHeight: 1.6,
+          }}
+        >
+          O Mercado Livre entrega a etiqueta numa folha A4 com a etiqueta no
+          canto superior esquerdo e a lista de separacao na segunda pagina. O
+          sistema descarta a segunda pagina e recorta a primeira em 90x149 mm,
+          que e o tamanho de uma etiqueta 10x15. Os quatro valores acima sao a
+          caixa do recorte em pontos (72 por polegada); so mexa neles se a
+          impressao sair cortada.
+        </p>
+      </section>
+
+      <section className="secao">
         <div className="secao-titulo">Mercado Ads</div>
         <div className="form-linha">
           <div className="campo" style={{ minWidth: 260 }}>

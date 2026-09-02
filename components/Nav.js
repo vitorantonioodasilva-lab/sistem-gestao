@@ -1,20 +1,21 @@
-'use client';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const LINKS = [
-  ['/', 'Painel'],
-  ['/produtos', 'Produtos e custos'],
-  ['/config', 'Ajustes'],
+  ["/", "Painel"],
+  ["/expedicao", "Expedição"],
+  ["/produtos", "Produtos e custos"],
+  ["/config", "Ajustes"],
 ];
 
 export default function Nav() {
   const path = usePathname();
-  if (path === '/login') return null;
+  if (path === "/login") return null;
   return (
     <nav>
       {LINKS.map(([href, texto]) => (
-        <Link key={href} href={href} className={path === href ? 'ativo' : ''}>
+        <Link key={href} href={href} className={path === href ? "ativo" : ""}>
           {texto}
         </Link>
       ))}
