@@ -68,6 +68,7 @@ export default function Expedicao() {
   const [recado, setRecado] = useState(null);
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState("prazo");
+  const [canal, setCanal] = useState("todos");
 
   async function carregar(silencioso) {
     if (!silencioso) setCarregando(true);
@@ -118,6 +119,13 @@ export default function Expedicao() {
 
   const emitirNotas = () =>
     acao("nf", async () => {
+      // O Faturador é do Mercado Livre; nota da Shopee sai no Seller Centre.
+      const shopee = selecionadosShopee();
+      if (shopee.length) {
+        throw new Error(
+          `${shopee.length} pedido(s) da Shopee na seleção. A nota da Shopee é emitida no Seller Centre, não por aqui.`,
+        );
+      }
       const r = await fetch("/api/nf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,8 +156,23 @@ export default function Expedicao() {
       await carregar(true);
     });
 
+  /** Quais dos selecionados são da Shopee. As ações abaixo são só do ML. */
+  function selecionadosShopee() {
+    return (dados?.envios || []).filter(
+      (e) => sel.has(e.shipment_id) && e.canal === "shopee",
+    );
+  }
+
   function imprimir(inteira) {
     if (!sel.size) return;
+    const shopee = selecionadosShopee();
+    if (shopee.length) {
+      setRecado(
+        `${shopee.length} pedido${shopee.length === 1 ? "" : "s"} da Shopee na seleção. ` +
+          "A etiqueta da Shopee ainda não é baixada por aqui: pegue no Seller Centre e passe em Etiquetas.",
+      );
+      return;
+    }
     window.open(
       `/api/expedicao/etiqueta?ids=${[...sel].join(",")}&formato=pdf${inteira ? "&inteira=1" : ""}`,
       "_blank",
@@ -201,9 +224,12 @@ export default function Expedicao() {
 
   const todos = dados?.envios || [];
   const termo = busca.trim().toLowerCase();
+  // Sem venda na Shopee, nada de canal aparece: a tela continua igual.
+  const temShopee = todos.some((e) => e.canal === "shopee");
 
   const lista = todos
     .filter((e) => e.aba === aba)
+    .filter((e) => canal === "todos" || (e.canal || "ml") === canal)
     .filter((e) => {
       if (!termo) return true;
       const alvo = [
@@ -490,6 +516,19 @@ export default function Expedicao() {
           onChange={(e) => setBusca(e.target.value)}
         />
 
+        {temShopee && (
+          <select
+            className="r-select"
+            value={canal}
+            onChange={(e) => setCanal(e.target.value)}
+            title="Filtrar por canal de venda"
+          >
+            <option value="todos">Todos os canais</option>
+            <option value="ml">Só Mercado Livre</option>
+            <option value="shopee">Só Shopee</option>
+          </select>
+        )}
+
         <select
           className="r-select"
           value={ordem}
@@ -544,6 +583,11 @@ export default function Expedicao() {
               />
 
               <div>
+                {temShopee && (
+                  <span className={`r-canal ${e.canal || "ml"}`}>
+                    {(e.canal || "ml") === "shopee" ? "Shopee" : "Mercado Livre"}
+                  </span>
+                )}
                 {e.itens.map((it, k) => (
                   <div className="r-prod" key={k}>
                     <span className="r-qtd">{it.quantidade}×</span>
@@ -650,7 +694,7 @@ export default function Expedicao() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  abrir no ML ↗
+                  abrir {(e.canal || "ml") === "shopee" ? "na Shopee" : "no ML"} ↗
                 </a>
               </div>
             </article>

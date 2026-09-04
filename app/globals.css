@@ -1096,3 +1096,55 @@ input.mini { width: 88px; text-align: right; }
   max-width: 130px;
   line-height: 1.35;
 }
+
+/* ---------- Canal de venda ---------- */
+
+.r-canal {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+}
+.r-canal.shopee { background: #ee4d2d; color: #fff; }
+.r-canal.ml { background: #ffe24d; color: #4a3b00; }
+
+.canais { display: grid; gap: 10px; margin-bottom: 14px; }
+.canal-linha {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--barra);
+  border-left: 3px solid var(--linha);
+}
+.canal-linha.shopee { border-left-color: #ee4d2d; }
+.canal-linha.ml { border-left-color: #ffd400; }
+.canal-nome { font-weight: 600; font-size: 14px; }
+.canal-nome span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--tinta-fraca);
+}
+.canal-barra { height: 8px; background: var(--barra-forte); border-radius: 999px; overflow: hidden; }
+.canal-barra i { display: block; height: 100%; background: var(--tinta); }
+.canal-linha.shopee .canal-barra i { background: #ee4d2d; }
+.canal-linha.ml .canal-barra i { background: #f0c400; }
+.canal-num { text-align: right; font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+.canal-num b { display: block; font-size: 15px; }
+.canal-aviso {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--tinta-fraca);
+  background: var(--alerta);
+  border-left: 3px solid #b8860b;
+  padding: 7px 10px;
+  margin-top: 4px;
+}

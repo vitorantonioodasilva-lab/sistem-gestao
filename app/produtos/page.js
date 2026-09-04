@@ -38,9 +38,14 @@ export default function Produtos() {
   }
 
   const filtrada = lista.filter((p) =>
-    `${p.titulo} ${p.sku} ${p.item_id}`.toLowerCase().includes(busca.toLowerCase())
+    `${p.titulo} ${p.sku} ${p.item_id} ${p.canal || ''}`
+      .toLowerCase()
+      .includes(busca.toLowerCase())
   );
   const semCusto = lista.filter((p) => Number(p.custo_unitario) === 0).length;
+  // O mesmo produto pode estar nos dois canais com custo separado; sem Shopee
+  // cadastrada a coluna de canal nem aparece.
+  const multicanal = new Set(lista.map((p) => p.canal || 'ml')).size > 1;
 
   return (
     <>
@@ -95,6 +100,11 @@ export default function Produtos() {
               return (
                 <tr key={p.id}>
                   <td>
+                    {multicanal && (
+                      <span className={`r-canal ${p.canal || 'ml'}`}>
+                        {(p.canal || 'ml') === 'shopee' ? 'Shopee' : 'Mercado Livre'}
+                      </span>
+                    )}{' '}
                     {p.titulo || p.item_id}
                     <div style={{ fontFamily: 'var(--mono)', fontSize: 10, color: 'var(--tinta-fraca)' }}>
                       {p.item_id}

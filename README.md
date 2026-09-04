@@ -13,6 +13,11 @@ gratuitos de Vercel + Neon.
 
 - **Conexão OAuth** com o Mercado Livre, com renovação automática do token (o `refresh_token` é de
   uso único e a rotação é tratada).
+- **Conexão com a Shopee** pela Open Platform (API v2, assinatura HMAC), com renovação do token,
+  que lá dura 4 horas. Pedido, comissão, taxa de serviço, taxa de transação e repasse vêm do
+  escrow — não são estimativa.
+- **Multicanal de ponta a ponta**: expedição, DRE, produtos e diagnóstico separam Mercado Livre e
+  Shopee, e o painel mostra os dois lado a lado.
 - **Sincronização** de pedidos, itens, envios e anúncios. Manual pelo botão ou diária pelo cron.
 - **Webhook** em `/api/ml/webhook` que responde em ~15 ms e processa depois, atendendo o limite de
   500 ms exigido pelo Mercado Livre.
@@ -121,6 +126,7 @@ lib/db.js         conexão Postgres + schema (criado sozinho)
 lib/ml.js         OAuth, refresh, sincronização de pedidos/anúncios/fretes
 lib/margem.js     motor de cálculo: margem, DRE, cobertura, curva ABC, alertas
 lib/session.js    sessão por senha
+lib/shopee.js     Open Platform da Shopee: assinatura, token, pedidos, escrow e anúncios
 lib/etiquetas.js  reconhece o formato, acha as etiquetas no PDF e remonta na mídia térmica
 middleware.js     protege tudo menos webhook, login e cron
 app/page.js       painel
@@ -128,6 +134,7 @@ app/produtos/     custos por anúncio
 app/etiquetas/    conversor de etiquetas para a impressora térmica
 app/config/       conexão, alíquota, custos fixos, log de sincronização
 app/api/ml/       auth, callback, webhook, sync
+app/api/shopee/   auth, callback, sync
 ```
 
 ---

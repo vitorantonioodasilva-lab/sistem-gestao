@@ -70,6 +70,9 @@ export default function Painel() {
 
   const semConta = !dados?.conta;
   const d = dados?.dre;
+  // Só quem realmente vendeu no período entra na comparação.
+  const canais = (dados?.canais || []).filter((c) => c.pedidos > 0);
+  const multicanal = canais.length > 1;
 
   return (
     <>
@@ -167,11 +170,56 @@ export default function Painel() {
           }}
         >
           <div>
+            {multicanal && (
+              <>
+                <div className="secao-titulo">Cada canal</div>
+                <div className="canais">
+                  {canais.map((c) => (
+                    <div key={c.canal} className={`canal-linha ${c.canal}`}>
+                      <div className="canal-nome">
+                        {c.canal === "shopee" ? "Shopee" : "Mercado Livre"}
+                        <span>
+                          {c.pedidos} pedido{c.pedidos === 1 ? "" : "s"} ·{" "}
+                          {pct(c.pct_receita)} da receita
+                        </span>
+                      </div>
+                      <div
+                        className="canal-barra"
+                        title={`${pct(c.pct_receita)} da receita do período`}
+                      >
+                        <i style={{ width: `${Math.max(2, c.pct_receita)}%` }} />
+                      </div>
+                      <div className="canal-num">
+                        <b className={sinal(c.lucro)}>{brl(c.lucro)}</b>
+                        margem {pct(c.margem_pct)}
+                      </div>
+                      {/* Se o que o marketplace diz que repassou não bate com
+                          a nossa conta, é a modelagem de tarifa que está
+                          incompleta — melhor avisar que esconder no lucro. */}
+                      {c.diferenca_repasse !== null &&
+                        Math.abs(c.diferenca_repasse) >= 1 && (
+                          <div className="canal-aviso">
+                            O repasse informado difere da nossa conta em{" "}
+                            <strong>{brl(c.diferenca_repasse)}</strong> em{" "}
+                            {c.pedidos_com_repasse} pedido
+                            {c.pedidos_com_repasse === 1 ? "" : "s"}. O lucro
+                            desse canal é estimativa até isso fechar.
+                          </div>
+                        )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
             <div className="secao-titulo">Onde o dinheiro foi</div>
             <div className="fita">
               <div className="fita-cab">Período de {dias} dias</div>
               <Linha rotulo="Receita bruta" valor={d.receita} />
-              <Linha rotulo="Tarifa Mercado Livre" valor={-d.tarifa} />
+              <Linha
+                rotulo={multicanal ? "Tarifa dos marketplaces" : "Tarifa Mercado Livre"}
+                valor={-d.tarifa}
+              />
               <Linha rotulo="Frete por sua conta" valor={-d.frete} />
               <Linha rotulo="Custo dos produtos" valor={-d.cmv} />
               <Linha rotulo="Embalagem" valor={-d.embalagem} />
@@ -289,8 +337,13 @@ export default function Painel() {
                 .filter((p) => p.unidades_vendidas > 0)
                 .slice(0, 25)
                 .map((p) => (
-                  <tr key={p.item_id + p.variation_id}>
+                  <tr key={`${p.canal}|${p.item_id}|${p.variation_id}`}>
                     <td>
+                      {multicanal && (
+                        <span className={`r-canal ${p.canal}`}>
+                          {p.canal === "shopee" ? "Shopee" : "Mercado Livre"}
+                        </span>
+                      )}{" "}
                       {p.titulo}
                       {p.custo_unitario === 0 && (
                         <span
@@ -353,10 +406,17 @@ export default function Painel() {
       </section>
 
       <p className="rodape">
-        A tarifa vem do campo <code>sale_fee</code> do pedido, que é a
-        estimativa do Mercado Livre. O valor definitivo só aparece na fatura do
-        mês — confira em Ajustes se a sua tarifa é cobrada por unidade ou por
-        linha do pedido.
+        No Mercado Livre a tarifa vem do campo <code>sale_fee</code> do pedido,
+        que é a estimativa — o valor definitivo só aparece na fatura do mês.
+        Confira em Ajustes se a sua tarifa é cobrada por unidade ou por linha do
+        pedido.
+        {multicanal && (
+          <>
+            {" "}
+            Na Shopee a tarifa não é estimativa: comissão, taxa de serviço e
+            taxa de transação vêm do repasse (escrow) do próprio pedido.
+          </>
+        )}
       </p>
     </>
   );
