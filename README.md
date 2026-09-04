@@ -21,6 +21,9 @@ gratuitos de Vercel + Neon.
 - **DRE do período**, incluindo rateio de custo fixo mensal.
 - **Estoque e reposição**: cobertura em dias, ponto de pedido, sugestão de compra, curva ABC.
 - **Alertas**: produto vendendo com margem negativa, anúncio sem custo cadastrado, ruptura próxima.
+- **Edição de etiquetas**: recorta as etiquetas que o Mercado Livre manda diagramadas em A4 e
+  remonta tudo no tamanho da etiqueta térmica (10 × 15 cm), uma embaixo da outra. Etiqueta de
+  envio sai uma por folha; etiqueta de produto sai em grade (2 × 3 por padrão).
 - **Painel protegido por senha** — são dados financeiros numa URL pública.
 
 ---
@@ -116,9 +119,11 @@ lib/db.js         conexão Postgres + schema (criado sozinho)
 lib/ml.js         OAuth, refresh, sincronização de pedidos/anúncios/fretes
 lib/margem.js     motor de cálculo: margem, DRE, cobertura, curva ABC, alertas
 lib/session.js    sessão por senha
+lib/etiquetas.js  acha as etiquetas dentro do PDF e remonta na mídia térmica
 middleware.js     protege tudo menos webhook, login e cron
 app/page.js       painel
 app/produtos/     custos por anúncio
+app/etiquetas/    conversor de etiquetas para a impressora térmica
 app/config/       conexão, alíquota, custos fixos, log de sincronização
 app/api/ml/       auth, callback, webhook, sync
 ```
