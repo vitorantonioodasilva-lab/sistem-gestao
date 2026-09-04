@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { analisar, converter } from "@/lib/etiquetas";
+import { analisar, converter, documentos } from "@/lib/etiquetas";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -61,6 +61,20 @@ export async function POST(req) {
       return NextResponse.json({ arquivos: await analisar(arquivos) });
     } catch (e) {
       return NextResponse.json({ erro: e.message }, { status: 500 });
+    }
+  }
+
+  if (acao === "documentos") {
+    try {
+      const pdf = await documentos(arquivos);
+      return new NextResponse(Buffer.from(pdf), {
+        headers: {
+          "Content-Type": "application/pdf",
+          "Content-Disposition": 'inline; filename="documentos-a4.pdf"',
+        },
+      });
+    } catch (e) {
+      return NextResponse.json({ erro: e.message }, { status: 422 });
     }
   }
 

@@ -1028,3 +1028,71 @@ input.mini { width: 88px; text-align: right; }
   .etq-previa { gap: 18px; }
   .etq-visor { height: 420px; }
 }
+
+/* ---------- Formato reconhecido ---------- */
+
+.etq-formato {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  margin-top: 5px;
+}
+.etq-selo {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  padding: 2px 6px;
+  border: 1px solid var(--tinta);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.etq-selo.shopee { background: #ee4d2d; border-color: #ee4d2d; color: #fff; }
+.etq-selo.mercadolivre { background: var(--marcador); border-color: #b8a11f; }
+.etq-selo.desconhecido { color: var(--tinta-fraca); border-color: var(--linha); }
+.etq-formato-nota { font-size: 12px; color: var(--tinta-fraca); }
+
+/* ---------- Papelada A4 que ficou de fora ---------- */
+
+.etq-papelada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding: 11px 14px;
+  background: var(--alerta);
+  border-left: 3px solid #b8860b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.etq-baixar.claro {
+  background: var(--papel);
+  color: var(--tinta);
+  border: 2px solid var(--tinta);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.etq-baixar.claro:hover { background: var(--tinta); color: var(--papel); }
+
+.etq-grupo + .etq-grupo { margin-top: 14px; }
+.etq-grupo-nome {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  padding-bottom: 3px;
+}
+.etq-folha-caixa { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.etq-folha-nota {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--tinta-fraca);
+  max-width: 130px;
+  line-height: 1.35;
+}

@@ -17,6 +17,9 @@ import {
   IconeCheck,
 } from "@/components/Icones";
 
+/** Marca de onde veio a etiqueta, para bater o olho e reconhecer. */
+const SELO = { shopee: "SHOPEE", mercadolivre: "MERCADO LIVRE", desconhecido: "?" };
+
 const num = (v, casas = 1) =>
   Number(v)
     .toFixed(casas)
@@ -30,17 +33,42 @@ export default function Etiquetas() {
   const [estado, setEstado] = useState("vazio");
   const [erro, setErro] = useState(null);
   const [saida, setSaida] = useState(null);
+  const [papelada, setPapelada] = useState(null);
   const [arrastando, setArrastando] = useState(false);
   const campoRef = useRef(null);
 
   // O blob do PDF vive enquanto a prévia está na tela; some junto com ela.
   useEffect(() => () => saida && URL.revokeObjectURL(saida.url), [saida]);
+  useEffect(() => () => papelada && URL.revokeObjectURL(papelada.url), [papelada]);
 
   function limparSaida() {
     setSaida((s) => {
       if (s) URL.revokeObjectURL(s.url);
       return null;
     });
+    setPapelada((s) => {
+      if (s) URL.revokeObjectURL(s.url);
+      return null;
+    });
+  }
+
+  /** Baixa à parte as páginas A4 que não são etiqueta. */
+  async function baixarDocumentos() {
+    if (papelada) return;
+    const corpo = new FormData();
+    corpo.append("acao", "documentos");
+    for (const a of arquivos) corpo.append("arquivos", a);
+    try {
+      const r = await fetch("/api/etiquetas", { method: "POST", body: corpo });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.erro || "Não consegui separar os documentos.");
+      }
+      const blob = await r.blob();
+      setPapelada({ url: URL.createObjectURL(blob) });
+    } catch (e) {
+      setErro(e.message);
+    }
   }
 
   function ajustar(campo, valor) {
@@ -121,34 +149,55 @@ export default function Etiquetas() {
     if (campoRef.current) campoRef.current.value = "";
   }
 
-  // Prévia: usa a primeira etiqueta reconhecida como amostra da folha.
-  const amostra = analise?.find((a) => a.tamanho)?.tamanho || null;
-  const modoReal =
-    cfg.modo === "auto" ? modoAutomatico(amostra, cfg.midia) : cfg.modo;
-  const grade = useMemo(
-    () =>
-      amostra
-        ? medirGrade(
-            amostra,
-            modoReal === "unica" ? { ...cfg, colunas: 1, linhas: 1 } : cfg,
-          )
-        : null,
-    [amostra, cfg, modoReal],
-  );
+  // Cada tamanho de etiqueta é um grupo com a sua própria distribuição, e
+  // começa numa folha nova. Junta os grupos iguais dos vários arquivos.
+  const grupos = useMemo(() => {
+    const mapa = new Map();
+    for (const a of analise || []) {
+      for (const g of a.grupos || []) {
+        const chave = `${Math.round(g.tamanho.l / 2)}x${Math.round(g.tamanho.a / 2)}`;
+        const atual = mapa.get(chave) || { ...g, etiquetas: 0 };
+        atual.etiquetas += g.etiquetas;
+        mapa.set(chave, atual);
+      }
+    }
 
-  const totalEtiquetas = analise?.reduce((s, a) => s + a.etiquetas, 0) || 0;
-  const porFolha = modoReal === "unica" ? 1 : cfg.colunas * cfg.linhas;
-  const folhas = totalEtiquetas ? Math.ceil(totalEtiquetas / porFolha) : 0;
+    return [...mapa.values()].map((g) => {
+      const modo = cfg.modo === "auto" ? modoAutomatico(g.tamanho, cfg.midia) : cfg.modo;
+      const cabem = modo === "unica" ? 1 : cfg.colunas * cfg.linhas;
+      return {
+        ...g,
+        modo,
+        cabem,
+        folhas: Math.ceil(g.etiquetas / cabem),
+        medida: medirGrade(
+          g.tamanho,
+          modo === "unica" ? { ...cfg, colunas: 1, linhas: 1 } : cfg,
+        ),
+      };
+    });
+  }, [analise, cfg]);
+
+  // O grupo com mais etiquetas é o que vale a pena desenhar na prévia.
+  const principal = grupos.reduce((a, b) => (!a || b.etiquetas > a.etiquetas ? b : a), null);
+  const grade = principal?.medida || null;
+  const modoReal = principal?.modo || (cfg.modo === "auto" ? "unica" : cfg.modo);
+  const temGrade = grupos.some((g) => g.modo === "grade");
+
+  const totalEtiquetas = grupos.reduce((s, g) => s + g.etiquetas, 0);
+  const totalDocumentos = analise?.reduce((s, a) => s + (a.documentos?.length || 0), 0) || 0;
+  const folhas = grupos.reduce((s, g) => s + g.folhas, 0);
+
   const sobra =
-    modoReal === "grade" && grade && grade.linhasQueCabem > cfg.linhas
+    principal?.modo === "grade" && grade && grade.linhasQueCabem > cfg.linhas
       ? grade.linhasQueCabem
       : null;
 
   // A etiqueta de envio tem quase a altura da mídia: 2 mm de margem já a
   // encolhem. Quando dá para sair em tamanho real, oferece o atalho.
-  const margemCheia = margemParaTamanhoReal(amostra, cfg.midia);
+  const margemCheia = margemParaTamanhoReal(principal?.tamanho, cfg.midia);
   const podeTamanhoReal =
-    modoReal === "unica" &&
+    principal?.modo === "unica" &&
     grade &&
     grade.escala < 0.999 &&
     margemCheia !== null &&
@@ -164,9 +213,11 @@ export default function Etiquetas() {
       </div>
 
       <p className="etq-intro">
-        As etiquetas que chegam do Mercado Livre vêm diagramadas para folha A4 —
-        várias lado a lado. Aqui elas são recortadas uma a uma e remontadas no
-        tamanho da sua etiqueta térmica, sempre retas e uma embaixo da outra.
+        Mercado Livre e Shopee mandam as etiquetas diagramadas para folha A4 —
+        várias lado a lado, ou uma sozinha no canto. Aqui elas são reconhecidas,
+        recortadas uma a uma e remontadas no tamanho da sua etiqueta térmica,
+        sempre retas e uma embaixo da outra. Declaração de conteúdo e outros
+        papéis A4 ficam de fora, para você baixar à parte.
       </p>
 
       {/* ---------- Entrada ---------- */}
@@ -226,16 +277,36 @@ export default function Etiquetas() {
           {analise.map((a) => (
             <div key={a.nome} className={`etq-achado${a.detectado ? "" : " ruim"}`}>
               <div className="etq-achado-nome">{a.nome}</div>
+
+              {a.formatos?.map((f) => (
+                <div key={f.rotulo} className="etq-formato">
+                  <span className={`etq-selo ${f.origem}`}>{SELO[f.origem] || "?"}</span>
+                  <b>{f.rotulo}</b>
+                  <span className="etq-formato-nota">
+                    {f.paginas} página{f.paginas === 1 ? "" : "s"}
+                    {f.nota ? ` · ${f.nota}` : ""}
+                  </span>
+                </div>
+              ))}
+
               {a.detectado ? (
                 <div className="etq-achado-dado">
-                  <b>{a.etiquetas}</b> etiqueta{a.etiquetas === 1 ? "" : "s"} em{" "}
-                  {a.paginas} página{a.paginas === 1 ? "" : "s"} · cada uma com{" "}
-                  {num(a.tamanho.l)} × {num(a.tamanho.a)} mm
+                  {a.grupos?.map((g, i) => (
+                    <div key={i}>
+                      <b>{g.etiquetas}</b> etiqueta{g.etiquetas === 1 ? "" : "s"} de{" "}
+                      {num(g.tamanho.l)} × {num(g.tamanho.a)} mm
+                    </div>
+                  ))}
+                  {a.semContorno && (
+                    <div>
+                      Alguma página não tinha contorno reconhecível; usei a folha
+                      inteira nesses casos.
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="etq-achado-dado">
-                  {a.erro ||
-                    "Não achei o contorno das etiquetas. Vou usar a folha inteira como se fosse uma etiqueta só."}
+                  {a.erro || "Não achei nenhuma etiqueta nesse arquivo."}
                 </div>
               )}
             </div>
@@ -273,7 +344,7 @@ export default function Etiquetas() {
               </select>
             </div>
 
-            {modoReal === "grade" && (
+            {temGrade && (
               <>
                 <div className="campo estreito">
                   <label>Colunas</label>
@@ -310,7 +381,7 @@ export default function Etiquetas() {
               />
             </div>
 
-            {modoReal === "grade" && (
+            {temGrade && (
               <div className="campo estreito">
                 <label>Espaço (mm)</label>
                 <input
@@ -336,22 +407,42 @@ export default function Etiquetas() {
 
           {grade && (
             <div className="etq-previa">
-              <Folha cfg={cfg} grade={grade} modo={modoReal} />
+              <div className="etq-folha-caixa">
+                <Folha cfg={cfg} grade={grade} modo={modoReal} />
+                {grupos.length > 1 && (
+                  <span className="etq-folha-nota">{principal.rotulo}</span>
+                )}
+              </div>
               <div className="etq-previa-texto">
-                <div className="etq-linha">
-                  <span>Cada etiqueta sai com</span>
-                  <b>
-                    {num(grade.final.l)} × {num(grade.final.a)} mm
-                  </b>
-                </div>
-                <div className="etq-linha">
-                  <span>Tamanho do original</span>
-                  <b>{Math.round(grade.escala * 100)}%</b>
-                </div>
-                <div className="etq-linha">
-                  <span>Por folha</span>
-                  <b>{porFolha}</b>
-                </div>
+                {grupos.map((g, i) => (
+                  <div key={i} className="etq-grupo">
+                    {grupos.length > 1 && (
+                      <div className="etq-grupo-nome">
+                        {g.rotulo} · {g.etiquetas} de {num(g.tamanho.l)} ×{" "}
+                        {num(g.tamanho.a)} mm
+                      </div>
+                    )}
+                    <div className="etq-linha">
+                      <span>
+                        {grupos.length > 1 ? "Sai com" : "Cada etiqueta sai com"}
+                      </span>
+                      <b>
+                        {num(g.medida.final.l)} × {num(g.medida.final.a)} mm
+                      </b>
+                    </div>
+                    <div className="etq-linha">
+                      <span>Tamanho do original</span>
+                      <b>{Math.round(g.medida.escala * 100)}%</b>
+                    </div>
+                    <div className="etq-linha">
+                      <span>Por folha</span>
+                      <b>
+                        {g.cabem} · {g.folhas} folha{g.folhas === 1 ? "" : "s"}
+                      </b>
+                    </div>
+                  </div>
+                ))}
+
                 <div className="etq-linha total">
                   <span>{totalEtiquetas} etiquetas</span>
                   <b>{folhas} folha{folhas === 1 ? "" : "s"}</b>
@@ -419,6 +510,27 @@ export default function Etiquetas() {
               <IconeBaixar width={16} height={16} /> Baixar PDF
             </a>
           </div>
+
+          {totalDocumentos > 0 && (
+            <div className="etq-papelada">
+              <span>
+                {totalDocumentos} página{totalDocumentos === 1 ? "" : "s"} de
+                declaração de conteúdo {totalDocumentos === 1 ? "ficou" : "ficaram"}{" "}
+                de fora — {totalDocumentos === 1 ? "ela é" : "elas são"} A4 e{" "}
+                {totalDocumentos === 1 ? "vai" : "vão"} dentro da caixa, não na
+                etiqueta.
+              </span>
+              {papelada ? (
+                <a className="etq-baixar claro" href={papelada.url} download="documentos-a4.pdf">
+                  <IconeBaixar width={16} height={16} /> Baixar em A4
+                </a>
+              ) : (
+                <button className="etq-baixar claro" onClick={baixarDocumentos}>
+                  <IconeBaixar width={16} height={16} /> Separar em A4
+                </button>
+              )}
+            </div>
+          )}
           <iframe
             className="etq-visor"
             src={`${saida.url}#view=Fit`}
