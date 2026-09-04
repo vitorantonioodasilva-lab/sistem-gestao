@@ -395,6 +395,19 @@ export default function Etiquetas() {
               </div>
             )}
 
+            {totalDocumentos > 0 && (
+              <div className="campo">
+                <label>Declaração de conteúdo</label>
+                <select
+                  value={cfg.documentos}
+                  onChange={(e) => ajustar("documentos", e.target.value)}
+                >
+                  <option value="separar">Baixar à parte, em A4</option>
+                  <option value="incluir">Imprimir junto, na térmica</option>
+                </select>
+              </div>
+            )}
+
             <div className="campo">
               <label>Girar</label>
               <select value={cfg.girar} onChange={(e) => ajustar("girar", e.target.value)}>
@@ -511,7 +524,7 @@ export default function Etiquetas() {
             </a>
           </div>
 
-          {totalDocumentos > 0 && (
+          {totalDocumentos > 0 && cfg.documentos === "separar" && (
             <div className="etq-papelada">
               <span>
                 {totalDocumentos} página{totalDocumentos === 1 ? "" : "s"} de
