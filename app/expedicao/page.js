@@ -163,6 +163,22 @@ export default function Expedicao() {
     );
   }
 
+  /**
+   * Baixa sem abrir aba. A etiqueta vai direto para a pasta de downloads,
+   * que é de onde ela é mandada para a impressora — abrir no visualizador do
+   * navegador só acrescentava um passo e o risco de imprimir com "ajustar à
+   * página". O servidor manda Content-Disposition: attachment; o atributo
+   * download aqui é a segunda trava.
+   */
+  function baixar(url, nome) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
   function imprimir(inteira) {
     if (!sel.size) return;
     const shopee = selecionadosShopee();
@@ -173,12 +189,40 @@ export default function Expedicao() {
       );
       return;
     }
-    window.open(
-      `/api/expedicao/etiqueta?ids=${[...sel].join(",")}&formato=pdf${inteira ? "&inteira=1" : ""}`,
-      "_blank",
-    );
-    setTimeout(() => carregar(true), 2500);
+    baixarEtiquetas(inteira);
   }
+
+  /**
+   * Busca o PDF, confere que veio PDF mesmo e só então baixa. Apontar o link
+   * direto para a rota seria mais curto, mas quando o Mercado Livre recusa a
+   * etiqueta a resposta é um JSON de erro — e o navegador salvaria esse JSON
+   * com nome de .pdf, entregando um arquivo quebrado em vez da mensagem.
+   */
+  const baixarEtiquetas = (inteira) =>
+    acao("etiqueta", async () => {
+      const quantos = sel.size;
+      const r = await fetch(
+        `/api/expedicao/etiqueta?ids=${[...sel].join(",")}&formato=pdf${inteira ? "&inteira=1" : ""}`,
+      );
+
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.erro || "Não consegui gerar as etiquetas.");
+      }
+
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      baixar(url, `etiquetas-${quantos}.pdf`);
+      // O blob já foi entregue ao navegador; soltar a memória depois disso.
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+      const falhas = Number(r.headers.get("X-Falhas") || 0);
+      setRecado(
+        `${quantos} etiqueta${quantos === 1 ? "" : "s"} na pasta de downloads.` +
+          (falhas ? ` ${falhas} não veio(vieram) do Mercado Livre.` : ""),
+      );
+      setTimeout(() => carregar(true), 1500);
+    });
 
   function separacao() {
     if (!sel.size) return;
@@ -456,11 +500,12 @@ export default function Expedicao() {
             <button
               className="r-btn forte"
               onClick={() => imprimir(false)}
-              disabled={!sel.size}
+              disabled={!sel.size || ocupado}
             >
               <IconeEtiqueta width={16} height={16} />
-              {aba === "impresso" ? "Reimprimir" : "Imprimir"} {sel.size || ""}{" "}
-              etiqueta{sel.size === 1 ? "" : "s"}
+              {ocupado === "etiqueta"
+                ? "Baixando…"
+                : `${aba === "impresso" ? "Reimprimir" : "Imprimir"} ${sel.size || ""} etiqueta${sel.size === 1 ? "" : "s"}`}
             </button>
             <button
               className="r-btn"
@@ -473,7 +518,7 @@ export default function Expedicao() {
             <button
               className="r-btn"
               onClick={() => imprimir(true)}
-              disabled={!sel.size}
+              disabled={!sel.size || ocupado}
             >
               Folha A4 inteira
             </button>

@@ -64,7 +64,7 @@ export async function GET(req) {
     return new NextResponse(Buffer.from(pdf), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="etiquetas-${ids.length}.pdf"`,
+        "Content-Disposition": `attachment; filename="etiquetas-${ids.length}.pdf"`,
         "X-Falhas": String(falhas.length),
       },
     });

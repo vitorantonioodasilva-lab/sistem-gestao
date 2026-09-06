@@ -70,7 +70,7 @@ export async function POST(req) {
       return new NextResponse(Buffer.from(pdf), {
         headers: {
           "Content-Type": "application/pdf",
-          "Content-Disposition": 'inline; filename="documentos-a4.pdf"',
+          "Content-Disposition": 'attachment; filename="documentos-a4.pdf"',
         },
       });
     } catch (e) {
@@ -95,7 +95,7 @@ export async function POST(req) {
     return new NextResponse(Buffer.from(pdf), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${base}-termica.pdf"`,
+        "Content-Disposition": `attachment; filename="${base}-termica.pdf"`,
         "X-Resumo": encodeURIComponent(JSON.stringify(resumo)),
       },
     });

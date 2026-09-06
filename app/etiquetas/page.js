@@ -52,6 +52,19 @@ export default function Etiquetas() {
     });
   }
 
+  /**
+   * Dispara o download sem abrir aba. O arquivo vai direto para a pasta de
+   * downloads, que é de onde ele é mandado para a impressora.
+   */
+  function baixar(url, nome) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
   /** Baixa à parte as páginas A4 que não são etiqueta. */
   async function baixarDocumentos() {
     if (papelada) return;
@@ -65,7 +78,9 @@ export default function Etiquetas() {
         throw new Error(d.erro || "Não consegui separar os documentos.");
       }
       const blob = await r.blob();
-      setPapelada({ url: URL.createObjectURL(blob) });
+      const url = URL.createObjectURL(blob);
+      setPapelada({ url });
+      baixar(url, "documentos-a4.pdf");
     } catch (e) {
       setErro(e.message);
     }
@@ -129,8 +144,12 @@ export default function Etiquetas() {
         (r.headers.get("Content-Disposition") || "").match(/filename="(.+?)"/)?.[1] ||
         "etiquetas-termica.pdf";
       const blob = await r.blob();
-      setSaida({ url: URL.createObjectURL(blob), resumo, nome, bytes: blob.size });
+      const url = URL.createObjectURL(blob);
+      setSaida({ url, resumo, nome, bytes: blob.size });
       setEstado("feito");
+      // Converteu, baixou. A prévia abaixo continua ali só para conferir
+      // antes de mandar para a impressora.
+      baixar(url, nome);
       requestAnimationFrame(() =>
         document.querySelector(".etq-saida")?.scrollIntoView({ behavior: "smooth", block: "start" }),
       );
@@ -514,13 +533,13 @@ export default function Etiquetas() {
         <div className="etq-saida">
           <div className="etq-saida-topo">
             <span>
-              <IconeCheck width={16} height={16} /> Pronto para imprimir —{" "}
+              <IconeCheck width={16} height={16} /> Baixado e pronto para imprimir —{" "}
               {saida.resumo.reduce((s, r) => s + r.folhas, 0)} etiqueta
               {saida.resumo.reduce((s, r) => s + r.folhas, 0) === 1 ? "" : "s"} de{" "}
               {MIDIAS[cfg.midia].rotulo.split(" —")[0]}
             </span>
             <a className="etq-baixar" href={saida.url} download={saida.nome}>
-              <IconeBaixar width={16} height={16} /> Baixar PDF
+              <IconeBaixar width={16} height={16} /> Baixar de novo
             </a>
           </div>
 
