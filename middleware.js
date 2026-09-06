@@ -1,7 +1,15 @@
 import { NextResponse } from 'next/server';
 import { COOKIE, sessaoValida } from './lib/session';
 
-const LIVRES = ['/login', '/api/login', '/api/ml/webhook', '/api/ml/sync', '/api/ml/callback'];
+const LIVRES = [
+  '/login',
+  '/api/login',
+  '/api/ml/webhook',
+  '/api/ml/sync',
+  '/api/ml/callback',
+  '/api/shopee/callback',
+  '/api/shopee/sync',
+];
 
 export async function middleware(req) {
   const { pathname } = req.nextUrl;

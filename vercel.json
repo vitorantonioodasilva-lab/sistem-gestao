@@ -3,6 +3,10 @@
     {
       "path": "/api/ml/sync?dias=7",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/shopee/sync?dias=7",
+      "schedule": "20 6 * * *"
     }
   ]
 }

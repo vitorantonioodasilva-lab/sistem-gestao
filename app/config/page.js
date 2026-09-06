@@ -45,6 +45,8 @@ function Config() {
   const amb = d.ambiente || {};
   const faltaAmbiente =
     !amb.client_id || !amb.client_secret || !amb.redirect_uri;
+  const faltaShopee =
+    !amb.shopee_partner_id || !amb.shopee_partner_key || !amb.shopee_redirect_uri;
   const totalFixo = (d.custos_fixos || []).reduce(
     (a, c) => a + Number(c.valor_mensal),
     0,
@@ -57,6 +59,12 @@ function Config() {
           <h2>Conta conectada</h2>
           Agora volte ao painel e clique em “Atualizar do ML” para trazer o
           histórico.
+        </div>
+      )}
+      {params.get("shopee") && (
+        <div className="aviso">
+          <h2>Loja da Shopee conectada</h2>
+          Volte ao painel e clique em “Atualizar” para trazer os pedidos.
         </div>
       )}
       {params.get("erro") && (
@@ -129,6 +137,99 @@ function Config() {
               style={{ background: "var(--marcador)" }}
             >
               Conectar conta do Mercado Livre
+            </a>
+          </div>
+        )}
+      </section>
+
+      <section className="secao">
+        <div className="secao-titulo">Conexão com a Shopee</div>
+
+        {faltaShopee ? (
+          <div className="aviso">
+            <h2>Faltam variáveis de ambiente</h2>
+            Crie um app em <code>open.shopee.com</code>, pegue o Partner ID e a
+            Partner Key e cadastre na Vercel:
+            <ul
+              style={{
+                fontFamily: "var(--mono)",
+                fontSize: 12.5,
+                lineHeight: 1.9,
+              }}
+            >
+              <li>
+                SHOPEE_PARTNER_ID {amb.shopee_partner_id ? "✓" : "— faltando"}
+              </li>
+              <li>
+                SHOPEE_PARTNER_KEY {amb.shopee_partner_key ? "✓" : "— faltando"}
+              </li>
+              <li>
+                SHOPEE_REDIRECT_URI{" "}
+                {amb.shopee_redirect_uri || "— faltando"}
+              </li>
+            </ul>
+            O <code>SHOPEE_REDIRECT_URI</code> precisa terminar em{" "}
+            <code>/api/shopee/callback</code> e estar cadastrado igual no painel
+            da Shopee, incluindo <code>https://</code>.
+          </div>
+        ) : d.conta_shopee ? (
+          <div className="fita" style={{ maxWidth: 460 }}>
+            <div className="fita-cab">Loja autorizada</div>
+            <div className="fita-linha">
+              <span>Loja</span>
+              <span>{d.conta_shopee.shop_name || "—"}</span>
+            </div>
+            <div className="fita-linha">
+              <span>Shop ID</span>
+              <span>{d.conta_shopee.shop_id}</span>
+            </div>
+            <div className="fita-linha">
+              <span>Autorizada em</span>
+              <span>
+                {new Date(d.conta_shopee.conectado_em).toLocaleDateString(
+                  "pt-BR",
+                )}
+              </span>
+            </div>
+            <div className="fita-linha">
+              <span>Token expira</span>
+              <span>
+                {new Date(d.conta_shopee.expira_em).toLocaleString("pt-BR")}
+              </span>
+            </div>
+            <div style={{ marginTop: 14, display: "flex", gap: 8 }}>
+              <a className="botao" href="/api/shopee/auth">
+                Reautorizar
+              </a>
+              <a className="botao" href="/api/shopee/sync">
+                Sincronizar agora
+              </a>
+            </div>
+            <p
+              style={{
+                fontSize: 12.5,
+                color: "var(--tinta-fraca)",
+                lineHeight: 1.55,
+                marginBottom: 0,
+              }}
+            >
+              O token da Shopee dura 4 horas e se renova sozinho a cada
+              sincronização. Se ficar muito tempo sem sincronizar, é só
+              reautorizar.
+            </p>
+          </div>
+        ) : (
+          <div>
+            <p style={{ maxWidth: 620, lineHeight: 1.6 }}>
+              Você será levado à Shopee para autorizar o acesso de leitura aos
+              seus pedidos, anúncios e repasses. Entre com a conta dona da loja.
+            </p>
+            <a
+              className="botao"
+              href="/api/shopee/auth"
+              style={{ background: "#ee4d2d", color: "#fff" }}
+            >
+              Conectar loja da Shopee
             </a>
           </div>
         )}

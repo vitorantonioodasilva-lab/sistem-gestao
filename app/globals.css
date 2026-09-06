@@ -831,3 +831,320 @@ input.mini { width: 88px; text-align: right; }
   color: var(--r-rosa-forte); text-decoration: none; font-weight: 600;
 }
 .r-link:hover { text-decoration: underline; }
+
+/* =========================================================
+   EDIÇÃO DE ETIQUETAS
+   ========================================================= */
+
+.etq-intro {
+  max-width: 62ch;
+  margin: 0 0 20px;
+  color: var(--tinta-fraca);
+  line-height: 1.6;
+  font-size: 14px;
+}
+
+/* ---------- Área de soltar o arquivo ---------- */
+
+.etq-solta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 20px;
+  border: 2px dashed var(--linha);
+  border-radius: var(--raio);
+  background: var(--barra);
+  color: var(--tinta-fraca);
+  cursor: pointer;
+  transition: border-color .16s, background .16s, color .16s;
+}
+.etq-solta:hover, .etq-solta.sobre {
+  border-color: var(--tinta);
+  color: var(--tinta);
+  background: var(--barra-forte);
+}
+.etq-solta.sobre { border-style: solid; }
+.etq-solta.cheia { border-style: solid; background: var(--papel); color: var(--tinta); }
+.etq-solta strong { display: block; font-size: 15px; color: var(--tinta); }
+.etq-solta span { font-size: 13px; }
+
+.etq-espera {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--tinta-fraca);
+  margin: 12px 0 0;
+}
+
+/* ---------- Leitura do arquivo ---------- */
+
+.etq-achados { display: grid; gap: 8px; margin-top: 16px; }
+.etq-achado {
+  border-left: 3px solid var(--lucro);
+  background: var(--barra);
+  padding: 10px 14px;
+}
+.etq-achado.ruim { border-left-color: #b8860b; background: var(--alerta); }
+.etq-achado-nome {
+  font-family: var(--mono);
+  font-size: 12px;
+  word-break: break-all;
+}
+.etq-achado-dado { font-size: 13px; color: var(--tinta-fraca); margin-top: 2px; }
+.etq-achado-dado b { color: var(--tinta); }
+
+/* ---------- Ajustes ---------- */
+
+.etq-painel {
+  margin-top: 22px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  padding: 18px 20px 20px;
+}
+.etq-ajustes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--linha);
+}
+.etq-ajustes select, .etq-ajustes input {
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 9px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--papel);
+  color: var(--tinta);
+}
+.etq-ajustes .campo.estreito input { width: 84px; }
+
+/* ---------- Prévia da folha ---------- */
+
+.etq-previa {
+  display: flex;
+  gap: 26px;
+  align-items: flex-start;
+  padding: 20px 0 4px;
+  flex-wrap: wrap;
+}
+.etq-folha { flex: none; }
+.etq-folha-borda { fill: #fff; stroke: var(--linha); stroke-width: 1; }
+.etq-folha-etq { fill: var(--barra-forte); stroke: var(--tinta-fraca); stroke-width: 0.7; }
+.etq-folha-num {
+  fill: var(--tinta-fraca);
+  font-family: var(--mono);
+  font-size: 10px;
+  text-anchor: middle;
+}
+
+.etq-previa-texto { flex: 1; min-width: 240px; max-width: 420px; }
+.etq-linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 5px 0;
+  font-size: 13px;
+  color: var(--tinta-fraca);
+  border-bottom: 1px dotted var(--linha);
+}
+.etq-linha b { color: var(--tinta); font-family: var(--mono); }
+.etq-linha.total {
+  border-bottom: none;
+  border-top: 2px solid var(--tinta);
+  margin-top: 4px;
+  padding-top: 8px;
+  color: var(--tinta);
+  font-weight: 600;
+}
+
+.etq-dica {
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  text-align: left;
+  background: var(--marcador);
+  border: 1px solid var(--tinta);
+  cursor: pointer;
+}
+.etq-aviso {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--tinta-fraca);
+  background: var(--alerta);
+  border-left: 3px solid #b8860b;
+  padding: 8px 11px;
+}
+
+.etq-acoes { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+.etq-acoes button { display: inline-flex; align-items: center; gap: 7px; }
+
+/* ---------- Resultado ---------- */
+
+.etq-saida { margin-top: 26px; }
+.etq-saida-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--tinta);
+  font-size: 14px;
+}
+.etq-saida-topo > span { display: inline-flex; align-items: center; gap: 7px; }
+.etq-baixar {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+  background: var(--tinta);
+  color: var(--papel);
+  padding: 8px 15px;
+  border-radius: var(--raio);
+  font-size: 13px;
+  font-weight: 600;
+}
+.etq-baixar:hover { background: var(--lucro); }
+.etq-visor {
+  width: 100%;
+  height: 620px;
+  margin-top: 14px;
+  border: 1px solid var(--linha);
+  background: var(--barra);
+}
+.etq-nota {
+  font-size: 12.5px;
+  color: var(--tinta-fraca);
+  line-height: 1.55;
+  margin: 10px 0 0;
+  max-width: 62ch;
+}
+
+@media (max-width: 640px) {
+  .etq-previa { gap: 18px; }
+  .etq-visor { height: 420px; }
+}
+
+/* ---------- Formato reconhecido ---------- */
+
+.etq-formato {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  margin-top: 5px;
+}
+.etq-selo {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  padding: 2px 6px;
+  border: 1px solid var(--tinta);
+  border-radius: 2px;
+  white-space: nowrap;
+}
+.etq-selo.shopee { background: #ee4d2d; border-color: #ee4d2d; color: #fff; }
+.etq-selo.mercadolivre { background: var(--marcador); border-color: #b8a11f; }
+.etq-selo.desconhecido { color: var(--tinta-fraca); border-color: var(--linha); }
+.etq-formato-nota { font-size: 12px; color: var(--tinta-fraca); }
+
+/* ---------- Papelada A4 que ficou de fora ---------- */
+
+.etq-papelada {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding: 11px 14px;
+  background: var(--alerta);
+  border-left: 3px solid #b8860b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.etq-baixar.claro {
+  background: var(--papel);
+  color: var(--tinta);
+  border: 2px solid var(--tinta);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.etq-baixar.claro:hover { background: var(--tinta); color: var(--papel); }
+
+.etq-grupo + .etq-grupo { margin-top: 14px; }
+.etq-grupo-nome {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tinta-fraca);
+  padding-bottom: 3px;
+}
+.etq-folha-caixa { flex: none; display: flex; flex-direction: column; gap: 6px; }
+.etq-folha-nota {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--tinta-fraca);
+  max-width: 130px;
+  line-height: 1.35;
+}
+
+/* ---------- Canal de venda ---------- */
+
+.r-canal {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+  border: 1px solid transparent;
+}
+.r-canal.shopee { background: #ee4d2d; color: #fff; }
+.r-canal.ml { background: #ffe24d; color: #4a3b00; }
+
+.canais { display: grid; gap: 10px; margin-bottom: 14px; }
+.canal-linha {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--barra);
+  border-left: 3px solid var(--linha);
+}
+.canal-linha.shopee { border-left-color: #ee4d2d; }
+.canal-linha.ml { border-left-color: #ffd400; }
+.canal-nome { font-weight: 600; font-size: 14px; }
+.canal-nome span {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--tinta-fraca);
+}
+.canal-barra { height: 8px; background: var(--barra-forte); border-radius: 999px; overflow: hidden; }
+.canal-barra i { display: block; height: 100%; background: var(--tinta); }
+.canal-linha.shopee .canal-barra i { background: #ee4d2d; }
+.canal-linha.ml .canal-barra i { background: #f0c400; }
+.canal-num { text-align: right; font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+.canal-num b { display: block; font-size: 15px; }
+.canal-aviso {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: var(--tinta-fraca);
+  background: var(--alerta);
+  border-left: 3px solid #b8860b;
+  padding: 7px 10px;
+  margin-top: 4px;
+}
