@@ -13,17 +13,24 @@ export async function GET() {
     const conta = await query(
       "SELECT seller_id, nickname, conectado_em, expira_em FROM conta_ml WHERE id = 1",
     );
+    const shopee = await query(
+      "SELECT shop_id, shop_name, conectado_em, expira_em FROM conta_shopee WHERE id = 1",
+    ).catch(() => ({ rows: [] }));
     const log = await query("SELECT * FROM log_sync ORDER BY id DESC LIMIT 5");
     return NextResponse.json({
       config: cfg,
       custos_fixos: fixos.rows,
       conta: conta.rows[0] || null,
+      conta_shopee: shopee.rows[0] || null,
       log: log.rows,
       ambiente: {
         client_id: Boolean(process.env.ML_CLIENT_ID),
         client_secret: Boolean(process.env.ML_CLIENT_SECRET),
         redirect_uri: process.env.ML_REDIRECT_URI || null,
         senha_painel: Boolean(process.env.APP_PASSWORD),
+        shopee_partner_id: Boolean(process.env.SHOPEE_PARTNER_ID),
+        shopee_partner_key: Boolean(process.env.SHOPEE_PARTNER_KEY),
+        shopee_redirect_uri: process.env.SHOPEE_REDIRECT_URI || null,
       },
     });
   } catch (e) {

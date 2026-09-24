@@ -6,6 +6,7 @@ const LINKS = [
   ["/", "Painel"],
   ["/expedicao", "Expedição"],
   ["/produtos", "Produtos e custos"],
+  ["/etiquetas", "Etiquetas"],
   ["/diagnostico", "Diagnóstico"],
   ["/config", "Ajustes"],
 ];

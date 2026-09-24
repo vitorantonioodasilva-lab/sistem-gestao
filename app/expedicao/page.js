@@ -68,6 +68,7 @@ export default function Expedicao() {
   const [recado, setRecado] = useState(null);
   const [busca, setBusca] = useState("");
   const [ordem, setOrdem] = useState("prazo");
+  const [canal, setCanal] = useState("todos");
 
   async function carregar(silencioso) {
     if (!silencioso) setCarregando(true);
@@ -118,6 +119,13 @@ export default function Expedicao() {
 
   const emitirNotas = () =>
     acao("nf", async () => {
+      // O Faturador é do Mercado Livre; nota da Shopee sai no Seller Centre.
+      const shopee = selecionadosShopee();
+      if (shopee.length) {
+        throw new Error(
+          `${shopee.length} pedido(s) da Shopee na seleção. A nota da Shopee é emitida no Seller Centre, não por aqui.`,
+        );
+      }
       const r = await fetch("/api/nf", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,14 +156,73 @@ export default function Expedicao() {
       await carregar(true);
     });
 
+  /** Quais dos selecionados são da Shopee. As ações abaixo são só do ML. */
+  function selecionadosShopee() {
+    return (dados?.envios || []).filter(
+      (e) => sel.has(e.shipment_id) && e.canal === "shopee",
+    );
+  }
+
+  /**
+   * Baixa sem abrir aba. A etiqueta vai direto para a pasta de downloads,
+   * que é de onde ela é mandada para a impressora — abrir no visualizador do
+   * navegador só acrescentava um passo e o risco de imprimir com "ajustar à
+   * página". O servidor manda Content-Disposition: attachment; o atributo
+   * download aqui é a segunda trava.
+   */
+  function baixar(url, nome) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
   function imprimir(inteira) {
     if (!sel.size) return;
-    window.open(
-      `/api/expedicao/etiqueta?ids=${[...sel].join(",")}&formato=pdf${inteira ? "&inteira=1" : ""}`,
-      "_blank",
-    );
-    setTimeout(() => carregar(true), 2500);
+    const shopee = selecionadosShopee();
+    if (shopee.length) {
+      setRecado(
+        `${shopee.length} pedido${shopee.length === 1 ? "" : "s"} da Shopee na seleção. ` +
+          "A etiqueta da Shopee ainda não é baixada por aqui: pegue no Seller Centre e passe em Etiquetas.",
+      );
+      return;
+    }
+    baixarEtiquetas(inteira);
   }
+
+  /**
+   * Busca o PDF, confere que veio PDF mesmo e só então baixa. Apontar o link
+   * direto para a rota seria mais curto, mas quando o Mercado Livre recusa a
+   * etiqueta a resposta é um JSON de erro — e o navegador salvaria esse JSON
+   * com nome de .pdf, entregando um arquivo quebrado em vez da mensagem.
+   */
+  const baixarEtiquetas = (inteira) =>
+    acao("etiqueta", async () => {
+      const quantos = sel.size;
+      const r = await fetch(
+        `/api/expedicao/etiqueta?ids=${[...sel].join(",")}&formato=pdf${inteira ? "&inteira=1" : ""}`,
+      );
+
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d.erro || "Não consegui gerar as etiquetas.");
+      }
+
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      baixar(url, `etiquetas-${quantos}.pdf`);
+      // O blob já foi entregue ao navegador; soltar a memória depois disso.
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+
+      const falhas = Number(r.headers.get("X-Falhas") || 0);
+      setRecado(
+        `${quantos} etiqueta${quantos === 1 ? "" : "s"} na pasta de downloads.` +
+          (falhas ? ` ${falhas} não veio(vieram) do Mercado Livre.` : ""),
+      );
+      setTimeout(() => carregar(true), 1500);
+    });
 
   function separacao() {
     if (!sel.size) return;
@@ -201,9 +268,12 @@ export default function Expedicao() {
 
   const todos = dados?.envios || [];
   const termo = busca.trim().toLowerCase();
+  // Sem venda na Shopee, nada de canal aparece: a tela continua igual.
+  const temShopee = todos.some((e) => e.canal === "shopee");
 
   const lista = todos
     .filter((e) => e.aba === aba)
+    .filter((e) => canal === "todos" || (e.canal || "ml") === canal)
     .filter((e) => {
       if (!termo) return true;
       const alvo = [
@@ -430,11 +500,12 @@ export default function Expedicao() {
             <button
               className="r-btn forte"
               onClick={() => imprimir(false)}
-              disabled={!sel.size}
+              disabled={!sel.size || ocupado}
             >
               <IconeEtiqueta width={16} height={16} />
-              {aba === "impresso" ? "Reimprimir" : "Imprimir"} {sel.size || ""}{" "}
-              etiqueta{sel.size === 1 ? "" : "s"}
+              {ocupado === "etiqueta"
+                ? "Baixando…"
+                : `${aba === "impresso" ? "Reimprimir" : "Imprimir"} ${sel.size || ""} etiqueta${sel.size === 1 ? "" : "s"}`}
             </button>
             <button
               className="r-btn"
@@ -447,7 +518,7 @@ export default function Expedicao() {
             <button
               className="r-btn"
               onClick={() => imprimir(true)}
-              disabled={!sel.size}
+              disabled={!sel.size || ocupado}
             >
               Folha A4 inteira
             </button>
@@ -489,6 +560,19 @@ export default function Expedicao() {
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
         />
+
+        {temShopee && (
+          <select
+            className="r-select"
+            value={canal}
+            onChange={(e) => setCanal(e.target.value)}
+            title="Filtrar por canal de venda"
+          >
+            <option value="todos">Todos os canais</option>
+            <option value="ml">Só Mercado Livre</option>
+            <option value="shopee">Só Shopee</option>
+          </select>
+        )}
 
         <select
           className="r-select"
@@ -544,6 +628,11 @@ export default function Expedicao() {
               />
 
               <div>
+                {temShopee && (
+                  <span className={`r-canal ${e.canal || "ml"}`}>
+                    {(e.canal || "ml") === "shopee" ? "Shopee" : "Mercado Livre"}
+                  </span>
+                )}
                 {e.itens.map((it, k) => (
                   <div className="r-prod" key={k}>
                     <span className="r-qtd">{it.quantidade}×</span>
@@ -650,7 +739,7 @@ export default function Expedicao() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  abrir no ML ↗
+                  abrir {(e.canal || "ml") === "shopee" ? "na Shopee" : "no ML"} ↗
                 </a>
               </div>
             </article>

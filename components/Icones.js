@@ -104,3 +104,25 @@ export const IconeEtiqueta = (p) => (
     <circle cx="7.5" cy="7.5" r="1.5" />
   </svg>
 );
+
+export const IconeTesoura = (p) => (
+  <svg {...base} {...p}>
+    <circle cx="6" cy="6" r="3" />
+    <circle cx="6" cy="18" r="3" />
+    <path d="M20 4 8.12 15.88M14.47 14.48 20 20M8.12 8.12 12 12" />
+  </svg>
+);
+
+export const IconeUpload = (p) => (
+  <svg {...base} {...p}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="M17 8l-5-5-5 5M12 3v12" />
+  </svg>
+);
+
+export const IconeBaixar = (p) => (
+  <svg {...base} {...p}>
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <path d="M7 10l5 5 5-5M12 15V3" />
+  </svg>
+);
